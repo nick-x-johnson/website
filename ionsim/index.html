@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Trapped Ion String — Axial Modes (HTML)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-[#020617] flex flex-col items-center font-sans">
+
+  <!-- Title -->
+  <h1 class="text-white text-center mt-8 px-4 text-3xl sm:text-4xl font-semibold">
+    IonSim - A simulator for trapped ion dynamics
+  </h1>
+
+  <!-- Canvas container -->
+  <div id="app" class="w-full max-w-[960px] px-4 mt-6">
+    <canvas id="canvas" class="w-full rounded-lg bg-[#071033]"></canvas>
+
+    <!-- Foot section -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 bg-[#0f172a] text-[#d9d9d9] p-3 rounded-lg mt-3">
+      <span class="text-sm sm:text-base">
+        Trapped-ion string (N=8, axial modes, Coulomb-coupled)
+      </span>
+
+      <div class="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+        <label for="modeSelect" class="flex items-center text-sm sm:text-base">
+          Mode:
+        </label>
+        <select id="modeSelect" class="bg-[#1e293b] text-white border border-[#334155] rounded-md p-1 sm:p-2 text-sm sm:text-base w-full sm:w-auto">
+          <option value="super">Superposition (kick)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Description -->
+  <p class="text-[#cbd5e1] max-w-[900px] leading-relaxed text-center mt-6 px-4 text-base sm:text-lg">
+    IonSim is a physics simulator demonstrating the quantum dynamics of an ion string
+    within a linear Paul trap. In the animation above, an initial momentum kick is applied
+    to the leftmost ion, and the resulting motion is a superposition of normal modes.
+    The outer circles shrink and grow in size depending on each ion's velocity.
+  </p>
+
+  <!-- Footer -->
+  <footer class="mt-8 mb-6 text-[#64748b] text-sm text-center px-4">
+    © 2025 Nick Johnson. All rights reserved.
+  </footer>
+
+  <!-- JS: Trapped-ion simulation -->
+  <script>
+  (function(){
+    const N = 8, ionRadius = 18, trapFreq = 2.0, coupling = 1.8;
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let widthCSS, heightCSS, midY;
+    const globals = {};
+
+    function setCanvasSize(){
+      widthCSS = canvas.clientWidth;
+      heightCSS = widthCSS / 4;  // 4:1 aspect ratio
+      canvas.width = widthCSS * (window.devicePixelRatio || 1);
+      canvas.height = heightCSS * (window.devicePixelRatio || 1);
+      ctx.setTransform(window.devicePixelRatio || 1,0,0,window.devicePixelRatio || 1,0,0);
+      midY = heightCSS / 2;
+
+      globals.left = 60;
+      globals.right = widthCSS - 60;
+      globals.length = globals.right - globals.left;
+      globals.screenScale = (globals.length * 0.9) / ((globals.zmax - globals.zmin) || 1);
+      globals.screenOffset = globals.left + (globals.length - globals.screenScale * (globals.zmax - globals.zmin))/2 - globals.zmin*globals.screenScale;
+    }
+
+    // 1) Compute equilibrium positions
+    function computeEquilibriumPositions(){
+      const z = new Float64Array(N);
+      const v = new Float64Array(N);
+      const dt = 0.01, damping=0.98, tol=1e-8;
+      const center = (N-1)/2;
+      for(let i=0;i<N;i++) z[i]=i-center;
+
+      function forces(pos){
+        const F = new Float64Array(N);
+        for(let i=0;i<N;i++) F[i] = -trapFreq*trapFreq*pos[i];
+        for(let i=0;i<N;i++)
+          for(let j=0;j<N;j++)
+            if(i!==j){
+              const dx = pos[i]-pos[j], r = Math.abs(dx)+1e-12;
+              F[i] += coupling*(dx/(r*r*r));
+            }
+        return F;
+      }
+
+      for(let iter=0;iter<20000;iter++){
+        const F = forces(z);
+        let maxF=0;
+        for(let i=0;i<N;i++){
+          maxF = Math.max(maxF, Math.abs(F[i]));
+          v[i]+=F[i]*dt; v[i]*=damping; z[i]+=v[i]*dt;
+        }
+        if(maxF<tol) break;
+      }
+
+      const mean = z.reduce((a,b)=>a+b,0)/N;
+      for(let i=0;i<N;i++) z[i]-=mean;
+      return z;
+    }
+
+    const zEq = computeEquilibriumPositions();
+    globals.zmin = Math.min(...zEq);
+    globals.zmax = Math.max(...zEq);
+
+    // 2) Hessian + eigenmodes
+    const H = Array.from({length:N},()=>new Float64Array(N));
+    for(let i=0;i<N;i++)
+      for(let j=0;j<N;j++)
+        if(i!==j){
+          const dx = zEq[i]-zEq[j], r=Math.abs(dx)+1e-12;
+          H[i][j]=-coupling/(r*r*r);
+        }
+    for(let i=0;i<N;i++){
+      let sum=0;
+      for(let j=0;j<N;j++) if(i!==j) sum+=coupling/((Math.abs(zEq[i]-zEq[j])+1e-12)**3);
+      H[i][i] = trapFreq*trapFreq+sum;
+    }
+
+    function normalize(v){ let s=Math.sqrt(v.reduce((a,b)=>a+b*b,0))||1; return Float64Array.from(v.map(x=>x/s)); }
+
+    const modes=[], used=[];
+    for(let m=0;m<N;m++){
+      let v = Float64Array.from({length:N},()=>Math.random()-0.5);
+      v = normalize(v);
+      for(let it=0;it<400;it++){
+        const Hv = new Float64Array(N);
+        for(let i=0;i<N;i++) for(let j=0;j<N;j++) Hv[i]+=H[i][j]*v[j];
+        for(const u of used){
+          let dot=0; for(let i=0;i<N;i++) dot+=Hv[i]*u[i]; for(let i=0;i<N;i++) Hv[i]-=dot*u[i];
+        }
+        v=normalize(Hv);
+      }
+      let lambda=0; for(let i=0;i<N;i++) for(let j=0;j<N;j++) lambda+=v[i]*H[i][j]*v[j];
+      used.push(v);
+      modes.push({omega:Math.sqrt(Math.max(0,lambda)), vec:Float32Array.from(v)});
+    }
+    modes.sort((a,b)=>a.omega-b.omega);
+
+    // Insert mode options
+    const modeSelect = document.getElementById('modeSelect');
+    for(let i=0;i<N;i++){
+      const op=document.createElement('option'); op.value=i; op.textContent=`Mode ${i+1}`; modeSelect.appendChild(op);
+    }
+
+    // Initial conditions
+    const x0=new Float32Array(N), v0=new Float32Array(N); v0[0]=6.0;
+    const Ak=new Float32Array(N), Bk=new Float32Array(N);
+    for(let m=0;m<N;m++){
+      const vec=modes[m].vec; let a=0,b=0;
+      for(let i=0;i<N;i++){ a+=x0[i]*vec[i]; b+=v0[i]*vec[i]; }
+      Ak[m]=a; Bk[m]=b/(modes[m].omega||1e-6);
+    }
+
+    let start = performance.now();
+    let selectedMode = "super";
+    modeSelect.addEventListener('change', e=>{ selectedMode=e.target.value; start=performance.now(); });
+
+    function draw(tstamp){
+      const t=(tstamp-start)/1000;
+      const x = new Float32Array(N), v = new Float32Array(N);
+
+      if(selectedMode==="super"){
+        for(let m=0;m<N;m++){
+          const ω=modes[m].omega, vec=modes[m].vec;
+          const q=Ak[m]*Math.cos(ω*t)+Bk[m]*Math.sin(ω*t);
+          const qdot=ω*(-Ak[m]*Math.sin(ω*t)+Bk[m]*Math.cos(ω*t));
+          for(let i=0;i<N;i++){ x[i]+=q*vec[i]; v[i]+=qdot*vec[i]; }
+        }
+      } else{
+        const m=parseInt(selectedMode), ω=modes[m].omega, vec=modes[m].vec;
+        const q=Math.sin(ω*t), qdot=ω*Math.cos(ω*t);
+        for(let i=0;i<N;i++){ x[i]=q*vec[i]; v[i]=qdot*vec[i]; }
+      }
+
+      ctx.clearRect(0,0,widthCSS,heightCSS);
+      ctx.fillStyle='#0f172a'; ctx.fillRect(0,0,widthCSS,heightCSS);
+
+      // Glow line
+      ctx.save();
+      const grad=ctx.createLinearGradient(globals.left,0,globals.right,0);
+      grad.addColorStop(0,'rgba(79,70,229,0.06)');
+      grad.addColorStop(0.5,'rgba(99,102,241,0.06)');
+      grad.addColorStop(1,'rgba(79,70,229,0.06)');
+      ctx.strokeStyle=grad; ctx.lineWidth=10; ctx.beginPath();
+      for(let i=0;i<N;i++){
+        const cx=globals.screenOffset+(zEq[i]+x[i]*0.08)*globals.screenScale;
+        const cy=midY-20;
+        i===0?ctx.moveTo(cx,cy):ctx.lineTo(cx,cy);
+      }
+      ctx.stroke(); ctx.restore();
+
+      // Ions
+      for(let i=0;i<N;i++){
+        const cx=globals.screenOffset+(zEq[i]+x[i]*0.08)*globals.screenScale;
+        const cy=midY-20; const kin=0.5*v[i]*v[i]; const glow=Math.min(1,kin*25+Math.abs(x[i])*2);
+
+        ctx.save(); ctx.fillStyle=`rgba(79,70,229,${0.06+0.25*glow})`; ctx.filter=`blur(${6+8*glow}px)`; ctx.beginPath();
+        ctx.arc(cx,cy,ionRadius*2.8+30*glow,0,Math.PI*2); ctx.fill(); ctx.restore();
+
+        ctx.save(); 
+        const g=ctx.createRadialGradient(cx-ionRadius/3,cy-ionRadius/3,ionRadius*0.2,cx,cy,ionRadius);
+        g.addColorStop(0,'#60a5fa'); g.addColorStop(0.6,'#2563eb'); g.addColorStop(1,'#1e40af');
+        ctx.fillStyle=g; ctx.shadowColor='rgba(59,130,246,0.55)'; ctx.shadowBlur=18*(1+glow*1.5);
+        ctx.beginPath(); ctx.arc(cx,cy,ionRadius,0,Math.PI*2); ctx.fill(); ctx.restore();
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    setCanvasSize();
+    window.addEventListener('resize', setCanvasSize);
+    requestAnimationFrame(draw);
+
+  })();
+  </script>
+
+</body>
+</html>
