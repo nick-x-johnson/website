@@ -4,22 +4,30 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Trapped Ion String — Axial Modes (HTML)</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      }
+    };
+</script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 
 <body class="bg-[#020617] flex flex-col items-center font-sans">
 
-  <!-- Title -->
   <h1 class="text-white text-center mt-8 px-4 text-3xl sm:text-4xl font-semibold">
     IonSim - A simulator for trapped ion dynamics
   </h1>
 
-  <!-- Canvas container -->
   <div id="app" class="w-full max-w-[960px] px-4 mt-6">
-    <canvas id="canvas" class="w-full rounded-lg bg-[#071033]"></canvas>
+    <canvas id="canvas" class="w-full rounded-lg bg-[#071033] shadow-2xl"></canvas>
 
-    <!-- Foot section -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 bg-[#0f172a] text-[#d9d9d9] p-3 rounded-lg mt-3">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 bg-[#0f172a] text-[#d9d9d9] p-3 rounded-lg mt-3 border border-[#1e293b]">
       <span class="text-sm sm:text-base">
         Trapped-ion string (N=8, axial modes, Coulomb-coupled)
       </span>
@@ -28,47 +36,89 @@
         <label for="modeSelect" class="flex items-center text-sm sm:text-base">
           Mode:
         </label>
-        <select id="modeSelect" class="bg-[#1e293b] text-white border border-[#334155] rounded-md p-1 sm:p-2 text-sm sm:text-base w-full sm:w-auto">
+        <select id="modeSelect" class="bg-[#1e293b] text-white border border-[#334155] rounded-md p-1 sm:p-2 text-sm sm:text-base w-full sm:w-auto focus:ring-2 focus:ring-blue-500 outline-none">
           <option value="super">Superposition (kick)</option>
         </select>
       </div>
     </div>
   </div>
 
-  <!-- Description -->
   <p class="text-[#cbd5e1] max-w-[900px] leading-relaxed text-center mt-6 px-4 text-base sm:text-lg">
-    IonSim is a physics simulator demonstrating the quantum dynamics of an ion string
+    IonSim is a physics simulator demonstrating the collective dynamics of an ion string
     within a linear Paul trap. In the animation above, an initial momentum kick is applied
     to the leftmost ion, and the resulting motion is a superposition of normal modes.
     The outer circles shrink and grow in size depending on each ion's velocity.
   </p>
+  
+  <div class="max-w-[900px] mt-12 px-6 py-8 text-[#cbd5e1] text-left">
+    
+    <h2 class="text-2xl font-bold text-white mb-6 border-b border-[#334155] pb-2">Mathematical Framework</h2>
+    
+    <h3 class="text-xl font-semibold text-blue-400 mb-3">1. Total Potential Energy</h3>
+    <p class="mb-4">
+      The simulation models a 1D chain of $N$ ions in a linear Paul trap. The dynamics are governed by a total potential, $V_{total}$, which is the sum of the harmonic trapping potential and the Coulomb interaction between ions:
+    </p>
+    <div class="bg-[#020617] p-4 rounded-lg mb-4 overflow-x-auto">
+      $$V_{total} = \sum_{i=1}^{N} \frac{1}{2} M \omega_{ax}^2 z_i^2 + \sum_{i > j} \frac{e^2}{4\pi\epsilon_0 |z_i - z_j|}$$
+    </div>
+    <ul class="list-disc ml-6 mb-6 space-y-2">
+      <li><strong>Trap Confinement:</strong> The first term represents the axial quadratic potential that pulls ions toward the centre.</li>
+      <li><strong>Coulomb Repulsion:</strong> The second term represents the repulsive force between every pair of ions, preventing collapse.</li>
+    </ul>
+    
+    <h3 class="text-xl font-semibold text-blue-400 mb-3">2. Equilibrium and the Hessian</h3>
+    <p class="mb-4">
+      The simulator first finds the equilibrium positions, $z_{Eq}$, where the net force is zero using damped velocity Verlet integration. To find the collective vibrational modes, it calculates the <strong>Hessian Matrix</strong> ($H$):
+    </p>
+    <div class="bg-[#020617] p-4 rounded-lg mb-4 overflow-x-auto">
+      $$H_{ij} = \left. \frac{\partial^2 V_{total}}{\partial z_i \partial z_j} \right|_{z_{Eq}}$$
+    </div>
+    <ul class="list-disc ml-6 mb-6 space-y-2">
+      <li><strong>Off-diagonal elements:</strong> Represent the coupling strength between ion $i$ and ion $j$.</li>
+      <li><strong>Diagonal elements:</strong> Represent the local effective spring constant on a single ion (accounting for the restoring force of the trap and the push from all other ions).</li>
+    </ul>
 
-  <!-- Footer -->
+    <h3 class="text-xl font-semibold text-blue-400 mb-3">3. Time Evolution</h3>
+    <p class="mb-4">
+      The simulator solves the eigenvalue problem $H \vec{v} = \omega^2 \vec{v}$ to find the frequencies, $\omega$, and vectors, $\vec{v}$. The resulting motion, $z_i(t)$, is a superposition of these modes:
+    </p>
+    <div class="bg-[#020617] p-4 rounded-lg mb-2 overflow-x-auto">
+      $$z_i(t) = z_{Eq,i} + \sum_{m=1}^{N} \left[ A_m \cos(\omega_m t) + B_m \sin(\omega_m t) \right] v_{m,i}$$
+    </div>
+  </div>
+
+
   <footer class="mt-8 mb-6 text-[#64748b] text-sm text-center px-4">
     © 2025 Nick Johnson. All rights reserved.
   </footer>
 
-  <!-- JS: Trapped-ion simulation -->
   <script>
   (function(){
-    const N = 8, ionRadius = 18, trapFreq = 2.0, coupling = 1.8;
+    const N = 8, trapFreq = 2.0, coupling = 1.8; // The simulation uses scaled units (where M=1 and e=1)
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
-    let widthCSS, heightCSS, midY;
+    let widthCSS, heightCSS, midY, baseScale;
     const globals = {};
 
     function setCanvasSize(){
       widthCSS = canvas.clientWidth;
-      heightCSS = widthCSS / 4;  // 4:1 aspect ratio
+      heightCSS = widthCSS / 4; // Maintain 4:1 Aspect Ratio
+      
+      // Calculate scale relative to max 960px width
+      baseScale = widthCSS / 960; 
+
       canvas.width = widthCSS * (window.devicePixelRatio || 1);
       canvas.height = heightCSS * (window.devicePixelRatio || 1);
-      ctx.setTransform(window.devicePixelRatio || 1,0,0,window.devicePixelRatio || 1,0,0);
+      ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+      
       midY = heightCSS / 2;
 
-      globals.left = 60;
-      globals.right = widthCSS - 60;
+      // Scale horizontal padding
+      globals.left = 60 * baseScale;
+      globals.right = widthCSS - (60 * baseScale);
       globals.length = globals.right - globals.left;
+      
       globals.screenScale = (globals.length * 0.9) / ((globals.zmax - globals.zmin) || 1);
       globals.screenOffset = globals.left + (globals.length - globals.screenScale * (globals.zmax - globals.zmin))/2 - globals.zmin*globals.screenScale;
     }
@@ -78,8 +128,8 @@
       const z = new Float64Array(N);
       const v = new Float64Array(N);
       const dt = 0.01, damping=0.98, tol=1e-8;
-      const center = (N-1)/2;
-      for(let i=0;i<N;i++) z[i]=i-center;
+      const centre = (N-1)/2;
+      for(let i=0;i<N;i++) z[i]=i-centre;
 
       function forces(pos){
         const F = new Float64Array(N);
@@ -102,7 +152,6 @@
         }
         if(maxF<tol) break;
       }
-
       const mean = z.reduce((a,b)=>a+b,0)/N;
       for(let i=0;i<N;i++) z[i]-=mean;
       return z;
@@ -112,17 +161,17 @@
     globals.zmin = Math.min(...zEq);
     globals.zmax = Math.max(...zEq);
 
-    // 2) Hessian + eigenmodes
+    // 2) Hessian + eigenmodes (Logic remains same)
     const H = Array.from({length:N},()=>new Float64Array(N));
     for(let i=0;i<N;i++)
       for(let j=0;j<N;j++)
         if(i!==j){
           const dx = zEq[i]-zEq[j], r=Math.abs(dx)+1e-12;
-          H[i][j]=-coupling/(r*r*r);
+          H[i][j]=-(2*coupling)/(r*r*r);
         }
     for(let i=0;i<N;i++){
       let sum=0;
-      for(let j=0;j<N;j++) if(i!==j) sum+=coupling/((Math.abs(zEq[i]-zEq[j])+1e-12)**3);
+      for(let j=0;j<N;j++) if(i!==j) sum+=(2*coupling)/((Math.abs(zEq[i]-zEq[j])+1e-12)**3);
       H[i][i] = trapFreq*trapFreq+sum;
     }
 
@@ -146,13 +195,11 @@
     }
     modes.sort((a,b)=>a.omega-b.omega);
 
-    // Insert mode options
     const modeSelect = document.getElementById('modeSelect');
     for(let i=0;i<N;i++){
       const op=document.createElement('option'); op.value=i; op.textContent=`Mode ${i+1}`; modeSelect.appendChild(op);
     }
 
-    // Initial conditions
     const x0=new Float32Array(N), v0=new Float32Array(N); v0[0]=6.0;
     const Ak=new Float32Array(N), Bk=new Float32Array(N);
     for(let m=0;m<N;m++){
@@ -183,40 +230,59 @@
       }
 
       ctx.clearRect(0,0,widthCSS,heightCSS);
-      ctx.fillStyle='#0f172a'; ctx.fillRect(0,0,widthCSS,heightCSS);
+      ctx.fillStyle='#071033'; 
+      ctx.fillRect(0,0,widthCSS,heightCSS);
 
-      // Glow line
+      // --- Responsive Visual Constants ---
+      const ionRadius = 18 * baseScale;
+      const visualY = midY; 
+
+      // Glow line (Proportional thickness)
       ctx.save();
       const grad=ctx.createLinearGradient(globals.left,0,globals.right,0);
       grad.addColorStop(0,'rgba(79,70,229,0.06)');
       grad.addColorStop(0.5,'rgba(99,102,241,0.06)');
       grad.addColorStop(1,'rgba(79,70,229,0.06)');
-      ctx.strokeStyle=grad; ctx.lineWidth=10; ctx.beginPath();
+      ctx.strokeStyle=grad; 
+      ctx.lineWidth = 3 * baseScale;
+      ctx.beginPath();
       for(let i=0;i<N;i++){
         const cx=globals.screenOffset+(zEq[i]+x[i]*0.08)*globals.screenScale;
-        const cy=midY-20;
-        i===0?ctx.moveTo(cx,cy):ctx.lineTo(cx,cy);
+        i===0?ctx.moveTo(cx,visualY):ctx.lineTo(cx,visualY);
       }
       ctx.stroke(); ctx.restore();
 
       // Ions
       for(let i=0;i<N;i++){
         const cx=globals.screenOffset+(zEq[i]+x[i]*0.08)*globals.screenScale;
-        const cy=midY-20; const kin=0.5*v[i]*v[i]; const glow=Math.min(1,kin*25+Math.abs(x[i])*2);
+        const cy=visualY; 
+        const kin=0.5*v[i]*v[i]; 
+        const glow=Math.min(1,kin*25+Math.abs(x[i])*2);
 
-        ctx.save(); ctx.fillStyle=`rgba(79,70,229,${0.06+0.25*glow})`; ctx.filter=`blur(${6+8*glow}px)`; ctx.beginPath();
-        ctx.arc(cx,cy,ionRadius*2.8+30*glow,0,Math.PI*2); ctx.fill(); ctx.restore();
-
+        // Outer Glow (Proportional blur and size)
         ctx.save(); 
-        const g=ctx.createRadialGradient(cx-ionRadius/3,cy-ionRadius/3,ionRadius*0.2,cx,cy,ionRadius);
+        ctx.fillStyle=`rgba(79,70,229,${0.06+0.25*glow})`; 
+        ctx.filter=`blur(${ (6 + 8 * glow) * baseScale }px)`; 
+        ctx.beginPath();
+        ctx.arc(cx,cy, (ionRadius * 2.5) + (30 * glow * baseScale), 0, Math.PI*2); 
+        ctx.fill(); ctx.restore();
+
+        // Inner Sphere (Proportional gradient and shadow)
+        ctx.save(); 
+        const g=ctx.createRadialGradient(cx-ionRadius/3, cy-ionRadius/3, ionRadius*0.2, cx, cy, ionRadius);
         g.addColorStop(0,'#60a5fa'); g.addColorStop(0.6,'#2563eb'); g.addColorStop(1,'#1e40af');
-        ctx.fillStyle=g; ctx.shadowColor='rgba(59,130,246,0.55)'; ctx.shadowBlur=18*(1+glow*1.5);
-        ctx.beginPath(); ctx.arc(cx,cy,ionRadius,0,Math.PI*2); ctx.fill(); ctx.restore();
+        ctx.fillStyle=g; 
+        ctx.shadowColor='rgba(59,130,246,0.6)'; 
+        ctx.shadowBlur = 15 * (1 + glow * 1.5) * baseScale;
+        ctx.beginPath(); 
+        ctx.arc(cx, cy, ionRadius, 0, Math.PI*2); 
+        ctx.fill(); ctx.restore();
       }
 
       requestAnimationFrame(draw);
     }
 
+    // Initialize
     setCanvasSize();
     window.addEventListener('resize', setCanvasSize);
     requestAnimationFrame(draw);
