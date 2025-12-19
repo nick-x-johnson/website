@@ -43,14 +43,14 @@
     </div>
   </div>
 
-  <p class="text-[#cbd5e1] max-w-[900px] leading-relaxed text-center mt-6 px-4 text-base sm:text-lg">
+  <p class="text-[#cbd5e1] max-w-[900px] leading-relaxed text-justify mt-6 px-4 text-base sm:text-lg">
     IonSim is a physics simulator demonstrating the collective dynamics of an ion string
     within a linear Paul trap. In the animation above, an initial momentum kick is applied
     to the leftmost ion, and the resulting motion is a superposition of normal modes.
     The outer circles shrink and grow in size depending on each ion's velocity.
   </p>
   
-  <div class="max-w-[900px] mt-12 px-6 py-8 text-[#cbd5e1] text-left">
+  <div class="w-full max-w-[900px] mt-12 px-4 sm:px-6 py-8 text-[#cbd5e1] text-left">
     
     <h2 class="text-2xl font-bold text-white mb-6 border-b border-[#334155] pb-2">Mathematical Framework</h2>
     
@@ -58,7 +58,7 @@
     <p class="mb-4">
       The simulation models a 1D chain of $N$ ions in a linear Paul trap. The dynamics are governed by a total potential, $V_{total}$, which is the sum of the harmonic trapping potential and the Coulomb interaction between ions:
     </p>
-    <div class="bg-[#020617] p-4 rounded-lg mb-4 overflow-x-auto">
+    <div class="bg-[#020617] p-4 rounded-lg mb-4 overflow-x-auto text-sm sm:text-base">
       $$V_{total} = \sum_{i=1}^{N} \frac{1}{2} M \omega_{ax}^2 z_i^2 + \sum_{i > j} \frac{e^2}{4\pi\epsilon_0 |z_i - z_j|}$$
     </div>
     <ul class="list-disc ml-6 mb-6 space-y-2">
@@ -70,7 +70,7 @@
     <p class="mb-4">
       The simulator first finds the equilibrium positions, $z_{Eq}$, where the net force is zero using damped velocity Verlet integration. To find the collective vibrational modes, it calculates the <strong>Hessian Matrix</strong> ($H$):
     </p>
-    <div class="bg-[#020617] p-4 rounded-lg mb-4 overflow-x-auto">
+    <div class="bg-[#020617] p-4 rounded-lg mb-4 overflow-x-auto text-sm sm:text-base">
       $$H_{ij} = \left. \frac{\partial^2 V_{total}}{\partial z_i \partial z_j} \right|_{z_{Eq}}$$
     </div>
     <ul class="list-disc ml-6 mb-6 space-y-2">
@@ -82,7 +82,7 @@
     <p class="mb-4">
       The simulator solves the eigenvalue problem $H \vec{v} = \omega^2 \vec{v}$ to find the frequencies, $\omega$, and vectors, $\vec{v}$. The resulting motion, $z_i(t)$, is a superposition of these modes:
     </p>
-    <div class="bg-[#020617] p-4 rounded-lg mb-2 overflow-x-auto">
+    <div class="bg-[#020617] p-4 rounded-lg mb-2 overflow-x-auto text-sm sm:text-base">
       $$z_i(t) = z_{Eq,i} + \sum_{m=1}^{N} \left[ A_m \cos(\omega_m t) + B_m \sin(\omega_m t) \right] v_{m,i}$$
     </div>
   </div>
