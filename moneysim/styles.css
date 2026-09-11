@@ -127,9 +127,13 @@
 .parameter-info .icon{width:13px;height:13px}
 .parameter-tooltip{position:absolute;z-index:5;left:0;bottom:calc(100% + 7px);width:215px;padding:10px 12px;border-radius:8px;background:var(--deep);color:#f4f8ee;box-shadow:0 4px 14px #203d2920;font-size:11px;font-weight:400;line-height:1.6;cursor:default}
 .parameter-tooltip::after{content:"";position:absolute;top:100%;left:0;width:100%;height:8px}
+.investment-return-range{display:contents}
 @media(max-width:700px){.control-label-help{margin-bottom:8px;min-height:24px}.control-top .control-label-help label{margin-bottom:0}.parameter-tooltip{width:min(215px,calc(100vw - 85px))}}
 @media(max-width:700px) and (orientation:portrait){
   #panel-pension :is([data-control="contribution"],[data-control="pensionReturn"]) .control-top>:first-child{display:flex;align-items:center;min-height:32px}
+  #panel-mortgage .control-top>:first-child{display:flex;align-items:center;min-height:32px}
+  #panel-outlook .advanced[open]{display:block}
+  #panel-outlook .investment-return-range{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:26px}
 }
 @media(max-width:700px){[data-control="currentRate"] .parameter-tooltip,[data-control="totalPayment"] .parameter-tooltip{left:auto;right:0}}
 .money-help{position:relative;display:flex}
