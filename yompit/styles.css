@@ -67,7 +67,7 @@
   .breakdown-hint{font-size:0}.breakdown-hint .icon{font-size:12px}
 }
 @media(max-width:700px){
-  .page-intro h1{font-size:6px;white-space:nowrap}
+  .page-intro h1{font-size:clamp(24px,7.5vw,34px);letter-spacing:normal;white-space:nowrap}
   .mobile-controls-toggle{display:flex;align-items:center;justify-content:center;gap:7px;min-height:44px;font-size:11px;font-weight:550;color:#587548;padding:7px 6px}
   .mobile-controls-toggle .icon{width:12px;height:12px;transform:rotate(90deg)}
   .mobile-expanded .mobile-controls-toggle .icon{transform:rotate(-90deg)}
