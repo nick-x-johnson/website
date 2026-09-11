@@ -80,8 +80,15 @@
     const showHelp = () => { tooltip.hidden = false; };
     const hideHelp = () => { tooltip.hidden = true; };
     hoverTarget.addEventListener('pointerenter', event => { if (event.pointerType !== 'touch') showHelp(); });
-    hoverTarget.addEventListener('pointerleave', () => { if (hoverOnly || !help.contains(document.activeElement)) hideHelp(); });
-    if (!hoverOnly) {
+    hoverTarget.addEventListener('pointerleave', event => {
+      if (hoverOnly && event.pointerType === 'touch' && matchMedia('(max-width:700px)').matches) return;
+      if (hoverOnly || !help.contains(document.activeElement)) hideHelp();
+    });
+    if (hoverOnly) {
+      button.addEventListener('click', event => {
+        if (matchMedia('(max-width:700px)').matches && event.target.closest('.icon')) showHelp();
+      });
+    } else {
       help.addEventListener('focusin', showHelp);
       help.addEventListener('focusout', event => { if (!help.contains(event.relatedTarget)) hideHelp(); });
       button.addEventListener('click', showHelp);
@@ -260,7 +267,8 @@
     const x = month => margin.left + month / (validParams.years * 12) * pw;
     const y = value => margin.top + ph - (value - minimum) / (maximum - minimum) * ph;
     const path = (data, key) => data.rows.map((row, i) => `${i ? 'L' : 'M'}${x(row.month).toFixed(2)},${y(valueOf(row, key)).toFixed(2)}`).join(' ');
-    let out = `<title id="chart-title">${escapeHTML(view === 'mortgage' ? 'Mortgage repayment comparison' : view === 'pension' ? 'Pension growth projection' : 'Your financial projection')}</title><desc id="chart-desc">${validParams.years}-year ${scenario === 'base' ? 'balanced' : scenario === 'low' ? 'cautious' : 'optimistic'} projection in ${money === 'real' ? 'today’s' : 'future'} pounds. End pension ${pounds(valueOf(projection.rows.at(-1), 'pension'))}. Use the timeline slider or yearly table for exact values.</desc><defs><linearGradient id="pension-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#7eaa66" stop-opacity=".10"/><stop offset="100%" stop-color="#7eaa66" stop-opacity=".005"/></linearGradient><clipPath id="plot-clip"><rect x="${margin.left}" y="${margin.top - 2}" width="${pw + 2}" height="${ph + 4}"/></clipPath></defs>`;
+    svg.setAttribute('aria-label', view === 'mortgage' ? 'Mortgage repayment comparison' : view === 'pension' ? 'Pension growth projection' : 'Your financial projection');
+    let out = `<desc id="chart-desc">${validParams.years}-year ${scenario === 'base' ? 'balanced' : scenario === 'low' ? 'cautious' : 'optimistic'} projection in ${money === 'real' ? 'today’s' : 'future'} pounds. End pension ${pounds(valueOf(projection.rows.at(-1), 'pension'))}. Use the timeline slider or yearly table for exact values.</desc><defs><linearGradient id="pension-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#7eaa66" stop-opacity=".10"/><stop offset="100%" stop-color="#7eaa66" stop-opacity=".005"/></linearGradient><clipPath id="plot-clip"><rect x="${margin.left}" y="${margin.top - 2}" width="${pw + 2}" height="${ph + 4}"/></clipPath></defs>`;
     for (let val = minimum; val <= maximum + step / 10; val += step) {
       out += `<line x1="${margin.left}" y1="${y(val)}" x2="${width - margin.right}" y2="${y(val)}" class="chart-grid"/><text x="${margin.left - 12}" y="${y(val) + 3}" class="axis-label" text-anchor="end">${shortMoney(val)}</text>`;
     }
