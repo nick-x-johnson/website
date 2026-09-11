@@ -106,6 +106,7 @@
   .mobile-live-bar .button{font-size:11px;padding:12px 14px}
   body.editing-inputs{padding-bottom:88px}.editing-inputs .toast{bottom:100px}
   .page-footer>p{font-size:9px}
+  .footer-tagline{font-size:10px}
 }
 @media(max-width:380px){
   .metric-card{padding:14px}.metric-value{font-size:25px}.metric-label{font-size:10px}.metric-label .icon{height:12px;width:12px}
